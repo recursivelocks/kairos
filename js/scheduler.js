@@ -252,16 +252,27 @@ export function saveSlotEdit() {
   const slot = state.currentRoute.slots[index];
   const newTitle = document.getElementById('edit-slot-title').value.trim();
   const newStrategy = document.getElementById('edit-slot-strategy').value;
+  const newDuration = parseInt(document.getElementById('edit-slot-duration').value, 10) || slot.duration;
 
   if (newTitle) {
     slot.title = newTitle;
     slot.strategy = newStrategy;
     
+    // Check if duration changed
+    if (newDuration > 0 && newDuration !== slot.duration) {
+      slot.duration = newDuration;
+      const startMins = parseMins(slot.startTime);
+      slot.endTime = formatTime(startMins + newDuration);
+      
+      // Re-align all downstream slots
+      realignDownstreamSlots(index + 1, startMins + newDuration);
+    }
+
     // Auto sync strategy focus times if timer isn't running
     if (state.activeSlotIndex === index && !state.timer.isRunning) {
       const strat = STRATEGIES[newStrategy];
       if (strat) {
-        state.timer.duration = strat.focusMins * 60;
+        state.timer.duration = Math.min(strat.focusMins, slot.duration) * 60;
         state.timer.remaining = state.timer.duration;
       }
     }
@@ -273,6 +284,53 @@ export function saveSlotEdit() {
   
   // Close modal
   document.getElementById('edit-slot-modal').classList.remove('active');
+}
+
+/**
+ * Remove a landmark from today's route and realign all subsequent slots.
+ * @param {number} index 
+ */
+export function deleteSlot(index) {
+  if (!state.currentRoute || !state.currentRoute.slots[index]) return;
+  
+  if (state.currentRoute.slots.length <= 1) {
+    alert("You cannot delete the only landmark on your route. Use 'Reset Route' to re-plan.");
+    return;
+  }
+
+  const slot = state.currentRoute.slots[index];
+  const confirmMsg = `Remove "${slot.title}" from today's route?`;
+  if (!confirm(confirmMsg)) return;
+
+  // Stop timer if the active slot is being deleted
+  if (state.activeSlotIndex === index) {
+    stopTimer();
+  }
+
+  // Remove the slot
+  state.currentRoute.slots.splice(index, 1);
+
+  // Recalculate downstream timestamps
+  if (index > 0) {
+    const prevSlot = state.currentRoute.slots[index - 1];
+    realignDownstreamSlots(index, parseMins(prevSlot.endTime));
+  } else {
+    realignDownstreamSlots(0, parseMins(state.currentRoute.wakeTime || '07:00'));
+  }
+
+  // Safely adjust activeSlotIndex
+  if (state.activeSlotIndex >= state.currentRoute.slots.length) {
+    state.activeSlotIndex = state.currentRoute.slots.length - 1;
+  }
+
+  saveStateToLocalStorage();
+  renderTimeline();
+  setupActiveFocusBlock();
+  updateViewVisibility();
+
+  // Close modal if open
+  const modal = document.getElementById('edit-slot-modal');
+  if (modal) modal.classList.remove('active');
 }
 
 /**

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kairos-gps-v45';
+const CACHE_NAME = 'kairos-gps-v46';
 const ASSETS = [
   './',
   './index.html',

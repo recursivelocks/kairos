@@ -514,6 +514,46 @@ p {
   margin-left: 2px; /* Center play icon visually */
 }
 
+.timeline-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-card-action {
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-card-action:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.btn-card-action.btn-delete:hover {
+  color: var(--accent-danger);
+  border-color: var(--accent-danger);
+}
+
+.btn-stepper:hover {
+  border-color: var(--accent-primary) !important;
+  color: var(--accent-primary) !important;
+}
+
+.btn-stepper:active {
+  transform: scale(0.92);
+}
+
 .timeline-card {
   background: var(--bg-secondary);
   border: 1px solid var(--glass-border);

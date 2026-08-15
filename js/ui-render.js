@@ -107,9 +107,17 @@ export function renderTimeline() {
             <div class="timeline-title">${slot.title}</div>
             <div style="font-size: 12px; color: var(--text-secondary);">${slot.pillar}</div>
           </div>
-          <button class="btn-timeline-focus" onclick="event.stopPropagation(); selectActiveSlot(${index});" title="Start Focus Mode">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          </button>
+          <div class="timeline-card-actions">
+            <button class="btn-card-action" onclick="event.stopPropagation(); openEditSlotModal(${index});" title="Edit Landmark">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+            <button class="btn-card-action btn-delete" onclick="event.stopPropagation(); window.deleteLandmark(${index});" title="Delete Landmark">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <button class="btn-timeline-focus" onclick="event.stopPropagation(); selectActiveSlot(${index});" title="Start Focus Mode">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+          </div>
         </div>
         <div class="timeline-strategy-badge">
           <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle;"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -187,35 +195,43 @@ export function setupActiveFocusBlock() {
 
   const sectionEl = document.getElementById('focus-milestones-section');
   const listEl = document.getElementById('focus-milestones-list');
+  const countEl = document.getElementById('focus-milestones-count');
 
-  if (slot.milestones && slot.milestones.length > 0) {
-    sectionEl.style.display = 'block';
+  if (listEl) {
     listEl.innerHTML = '';
-    
-    slot.milestones.forEach((milestone, idx) => {
-      const mText = typeof milestone === 'string' ? milestone : milestone.text;
-      const mCompleted = typeof milestone === 'string' ? false : milestone.completed;
-
-      const row = document.createElement('label');
-      row.style.display = 'flex';
-      row.style.alignItems = 'center';
-      row.style.gap = '10px';
-      row.style.fontSize = '14px';
-      row.style.cursor = 'pointer';
-      row.style.padding = '10px 12px';
-      row.style.background = 'var(--bg-secondary)';
-      row.style.borderRadius = 'var(--radius-sm)';
-      row.style.border = '1px solid var(--glass-border)';
-      row.style.transition = 'var(--transition-smooth)';
+    if (slot.milestones && slot.milestones.length > 0) {
+      const doneCount = slot.milestones.filter(m => (typeof m === 'object' ? m.completed : false)).length;
+      if (countEl) countEl.textContent = `${doneCount}/${slot.milestones.length} done`;
       
-      row.innerHTML = `
-        <input type="checkbox" onchange="toggleFocusMilestone(${idx})" ${mCompleted ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
-        <span style="${mCompleted ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text-primary); font-weight: 500;'}">${mText}</span>
-      `;
-      listEl.appendChild(row);
-    });
-  } else {
-    sectionEl.style.display = 'none';
+      slot.milestones.forEach((milestone, idx) => {
+        const mText = typeof milestone === 'string' ? milestone : milestone.text;
+        const mCompleted = typeof milestone === 'string' ? false : milestone.completed;
+
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.justifyContent = 'space-between';
+        row.style.gap = '10px';
+        row.style.fontSize = '14px';
+        row.style.padding = '8px 12px';
+        row.style.background = 'var(--bg-secondary)';
+        row.style.borderRadius = 'var(--radius-sm)';
+        row.style.border = '1px solid var(--glass-border)';
+        row.style.transition = 'var(--transition-smooth)';
+        
+        row.innerHTML = `
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; margin: 0;">
+            <input type="checkbox" onchange="toggleFocusMilestone(${idx})" ${mCompleted ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;">
+            <span style="${mCompleted ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text-primary); font-weight: 500;'}">${mText}</span>
+          </label>
+          <button onclick="removeFocusMilestone(${idx})" style="background: none; border: none; font-size: 16px; color: var(--text-muted); cursor: pointer; padding: 0 4px;" title="Delete task">&times;</button>
+        `;
+        listEl.appendChild(row);
+      });
+    } else {
+      if (countEl) countEl.textContent = "0 tasks";
+      listEl.innerHTML = `<span style="font-size: 13px; color: var(--text-muted); font-style: italic;">No specific checklist items for this landmark yet.</span>`;
+    }
   }
 
   const reflectionCard = document.getElementById('reflection-card');
@@ -622,19 +638,152 @@ export function openEditSlotModal(index) {
   const slot = state.currentRoute.slots[index];
   if (!slot) return;
 
-  document.getElementById('edit-slot-index').value = index;
-  document.getElementById('edit-slot-title').value = slot.title;
-  document.getElementById('edit-slot-strategy').value = slot.strategy;
+  const indexInput = document.getElementById('edit-slot-index');
+  const titleInput = document.getElementById('edit-slot-title');
+  const strategyInput = document.getElementById('edit-slot-strategy');
+  if (!indexInput || !titleInput || !strategyInput) return;
+
+  indexInput.value = index;
+  titleInput.value = slot.title;
+  strategyInput.value = slot.strategy;
+
+  const durationInput = document.getElementById('edit-slot-duration');
+  const durationDisplay = document.getElementById('edit-slot-duration-display');
+  if (durationInput && durationDisplay) {
+    const dur = slot.duration || 45;
+    durationInput.value = dur;
+    durationDisplay.textContent = dur;
+  }
+
+  // Clear task input
+  const newTaskInput = document.getElementById('edit-slot-new-task');
+  if (newTaskInput) newTaskInput.value = '';
+
+  // Render tasks in modal
+  renderEditSlotTasks(index);
 
   const modal = document.getElementById('edit-slot-modal');
-  modal.classList.add('active');
+  if (modal) modal.classList.add('active');
+}
+
+/**
+ * Render landmark subtasks in the Adjust Coordinates modal
+ * @param {number} slotIndex 
+ */
+export function renderEditSlotTasks(slotIndex) {
+  if (!state.currentRoute || !state.currentRoute.slots[slotIndex]) return;
+  const slot = state.currentRoute.slots[slotIndex];
+  const listEl = document.getElementById('edit-slot-tasks-list');
+  const countEl = document.getElementById('edit-slot-tasks-count');
+  if (!listEl) return;
+
+  listEl.innerHTML = '';
+  const milestones = slot.milestones || [];
+  if (countEl) countEl.textContent = `${milestones.length} tasks`;
+
+  if (milestones.length === 0) {
+    listEl.innerHTML = `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">No subtasks added yet. Add one below.</span>`;
+    return;
+  }
+
+  milestones.forEach((m, idx) => {
+    const text = typeof m === 'string' ? m : m.text;
+    const completed = typeof m === 'string' ? false : m.completed;
+
+    const item = document.createElement('div');
+    item.style.display = 'flex';
+    item.style.alignItems = 'center';
+    item.style.justifyContent = 'space-between';
+    item.style.padding = '6px 10px';
+    item.style.background = 'var(--bg-primary)';
+    item.style.borderRadius = 'var(--radius-sm)';
+    item.style.border = '1px solid var(--glass-border)';
+    item.style.fontSize = '13px';
+
+    item.innerHTML = `
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; flex: 1;">
+        <input type="checkbox" onchange="toggleEditModalMilestone(${slotIndex}, ${idx})" ${completed ? 'checked' : ''} style="width: 14px; height: 14px; cursor: pointer;">
+        <span style="${completed ? 'text-decoration: line-through; opacity: 0.6; color: var(--text-muted);' : 'color: var(--text-primary); font-weight: 500;'}">${text}</span>
+      </label>
+      <button type="button" onclick="removeLandmarkTask(${slotIndex}, ${idx})" style="background: none; border: none; font-size: 16px; color: var(--text-muted); cursor: pointer; padding: 0 4px;" title="Delete task">&times;</button>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+/**
+ * Add a new task to a specific landmark
+ * @param {number} slotIndex 
+ * @param {string} text 
+ */
+export function addLandmarkTask(slotIndex, text) {
+  if (!state.currentRoute || !state.currentRoute.slots[slotIndex]) return;
+  const cleanText = (text || '').trim();
+  if (!cleanText) return;
+
+  const slot = state.currentRoute.slots[slotIndex];
+  if (!slot.milestones) slot.milestones = [];
+
+  slot.milestones.push({
+    id: 'task-' + Date.now(),
+    text: cleanText,
+    completed: false
+  });
+
+  saveStateToLocalStorage();
+  renderTimeline();
+  setupActiveFocusBlock();
+  renderEditSlotTasks(slotIndex);
+}
+
+/**
+ * Remove a specific task from a landmark
+ * @param {number} slotIndex 
+ * @param {number} taskIdx 
+ */
+export function removeLandmarkTask(slotIndex, taskIdx) {
+  if (!state.currentRoute || !state.currentRoute.slots[slotIndex]) return;
+  const slot = state.currentRoute.slots[slotIndex];
+  if (!slot.milestones) return;
+
+  slot.milestones.splice(taskIdx, 1);
+  saveStateToLocalStorage();
+  renderTimeline();
+  setupActiveFocusBlock();
+  renderEditSlotTasks(slotIndex);
+}
+
+export function removeFocusMilestone(taskIdx) {
+  removeLandmarkTask(state.activeSlotIndex, taskIdx);
+}
+
+export function toggleEditModalMilestone(slotIdx, taskIdx) {
+  const slot = state.currentRoute.slots[slotIdx];
+  milestoneManager.toggleMilestone(slot, taskIdx);
+  renderEditSlotTasks(slotIdx);
+}
+
+/**
+ * Adjusts the duration in the edit modal by delta minutes.
+ * @param {number} delta 
+ */
+export function changeEditSlotDuration(delta) {
+  const durationInput = document.getElementById('edit-slot-duration');
+  const durationDisplay = document.getElementById('edit-slot-duration-display');
+  if (!durationInput || !durationDisplay) return;
+
+  let current = parseInt(durationInput.value, 10) || 45;
+  let updated = Math.max(15, Math.min(240, current + delta));
+  durationInput.value = updated;
+  durationDisplay.textContent = updated;
 }
 
 /**
  * Closes the Adjust Coordinates modal
  */
 export function closeEditSlotModal() {
-  document.getElementById('edit-slot-modal').classList.remove('active');
+  const modal = document.getElementById('edit-slot-modal');
+  if (modal) modal.classList.remove('active');
 }
 
 /**
@@ -657,3 +806,7 @@ window.removeTaskFromBacklog = removeTaskFromBacklog;
 window.removeCompassReminder = removeCompassReminder;
 window.openEditSlotModal = openEditSlotModal;
 window.syncFocusToLiveSlot = syncFocusToLiveSlot;
+window.changeEditSlotDuration = changeEditSlotDuration;
+window.removeLandmarkTask = removeLandmarkTask;
+window.removeFocusMilestone = removeFocusMilestone;
+window.toggleEditModalMilestone = toggleEditModalMilestone;

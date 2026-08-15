@@ -22,8 +22,8 @@
       document.body.appendChild(div);
     });
 
-    // Programmatic PWA Cache Buster for v43
-    const CURRENT_APP_VERSION = '43';
+    // Programmatic PWA Cache Buster for v44
+    const CURRENT_APP_VERSION = '44';
     const installedVersion = localStorage.getItem('kairos_app_version');
     if (installedVersion !== CURRENT_APP_VERSION) {
       localStorage.setItem('kairos_app_version', CURRENT_APP_VERSION);
@@ -64,7 +64,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Core styling -->
-  <link rel="stylesheet" href="./css/style.css?v=43">
+  <link rel="stylesheet" href="./css/style.css?v=44">
 </head>
 <body>
   <div class="app-container">
@@ -321,10 +321,17 @@
         </div>
 
         <!-- Focus Milestones checklist -->
-        <div id="focus-milestones-section" style="margin-top: 24px; border-top: 1px dashed var(--glass-border); padding-top: 20px; display: none;">
-          <h3 style="color: var(--text-primary); font-size: 14px; margin-bottom: 12px; text-align: left;">Active Milestones:</h3>
-          <div id="focus-milestones-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+        <div id="focus-milestones-section" style="margin-top: 24px; border-top: 1px dashed var(--glass-border); padding-top: 20px;">
+          <h3 style="color: var(--text-primary); font-size: 14px; margin-bottom: 12px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+            <span>Active Checklist & Tasks:</span>
+            <span id="focus-milestones-count" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">0 tasks</span>
+          </h3>
+          <div id="focus-milestones-list" style="display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 10px;">
             <!-- Milestones checkboxes populated dynamically -->
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="focus-new-task-input" placeholder="Add milestone to this focus block..." style="font-size: 13px; padding: 8px 10px; flex: 1; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); background: var(--bg-secondary); color: var(--text-primary);">
+            <button type="button" id="btn-focus-add-task" class="btn-primary" style="padding: 8px 14px; font-size: 13px; margin: 0; white-space: nowrap; cursor: pointer;">+ Add</button>
           </div>
         </div>
 
@@ -510,13 +517,13 @@
     </div>
 
     <!-- EDIT SLOT MODAL -->
-    <div class="modal-overlay" id="edit-slot-overlay">
+    <div class="modal-overlay" id="edit-slot-modal">
       <div class="modal-content">
         <div class="modal-header">
           <h2 style="margin-bottom: 0;">Adjust Coordinate</h2>
           <button class="btn-close" id="btn-close-edit-slot" aria-label="Close modal">&times;</button>
         </div>
-        <p style="margin-bottom: 20px;">Manually configure this landmark block's parameters:</p>
+        <p style="margin-bottom: 16px;">Configure this landmark block's parameters and subtasks:</p>
         
         <input type="hidden" id="edit-slot-index">
 
@@ -525,29 +532,51 @@
           <input type="text" id="edit-slot-title" placeholder="Landmark focus title...">
         </div>
 
-
-
-        <div class="inline-inputs">
-          <div class="input-group">
-            <label for="edit-slot-duration">Duration (Minutes)</label>
-            <input type="number" id="edit-slot-duration" min="5" max="480">
+        <div class="input-group">
+          <label>Landmark Duration</label>
+          <div class="duration-stepper" style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-secondary); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--glass-border);">
+            <button type="button" id="btn-duration-minus" class="btn-stepper" style="background: var(--bg-primary); border: 1px solid var(--glass-border); color: var(--text-primary); width: 40px; height: 36px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">-15m</button>
+            <div style="text-align: center;">
+              <span id="edit-slot-duration-display" style="font-size: 18px; font-weight: 800; color: var(--text-primary);">45</span>
+              <span style="font-size: 12px; color: var(--text-muted); margin-left: 2px;">mins</span>
+            </div>
+            <button type="button" id="btn-duration-plus" class="btn-stepper" style="background: var(--bg-primary); border: 1px solid var(--glass-border); color: var(--text-primary); width: 40px; height: 36px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;">+15m</button>
           </div>
-          <div class="input-group">
-            <label for="edit-slot-strategy">Strategy Guide</label>
-            <select id="edit-slot-strategy">
-              <option value="pomodoro">Pomodoro (25/5)</option>
-              <option value="timebox">Time-Boxing (50/10)</option>
-              <option value="frog">Eat the Frog (90/15)</option>
-              <option value="micro">10-Min Microtasks</option>
-              <option value="rest">Mindful Recharge</option>
-              <option value="routine">Mindful Start/End</option>
-            </select>
+          <input type="hidden" id="edit-slot-duration" value="45">
+        </div>
+
+        <div class="input-group">
+          <label for="edit-slot-strategy">Strategy Guide</label>
+          <select id="edit-slot-strategy">
+            <option value="pomodoro">Pomodoro (25/5)</option>
+            <option value="timebox">Time-Boxing (50/10)</option>
+            <option value="frog">Eat the Frog (90/15)</option>
+            <option value="micro">10-Min Microtasks</option>
+            <option value="rest">Mindful Recharge</option>
+            <option value="routine">Mindful Start/End</option>
+          </select>
+        </div>
+
+        <div class="input-group" style="margin-top: 10px;">
+          <label style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Landmark Tasks & Milestones</span>
+            <span id="edit-slot-tasks-count" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">0 tasks</span>
+          </label>
+          <div id="edit-slot-tasks-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; max-height: 140px; overflow-y: auto;"></div>
+          <div style="display: flex; gap: 6px;">
+            <input type="text" id="edit-slot-new-task" placeholder="Add specific subtask..." style="font-size: 13px; padding: 8px 10px; flex: 1;">
+            <button type="button" id="btn-edit-slot-add-task" class="btn-primary" style="padding: 8px 14px; font-size: 13px; margin: 0; white-space: nowrap;">+ Add</button>
           </div>
         </div>
 
-        <button id="btn-save-slot-edit" class="btn-primary" style="margin-top: 16px;">
+        <button id="btn-save-slot-edit" class="btn-primary" style="margin-top: 16px; width: 100%;">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;"><path d="M5 13l4 4L19 7"/></svg>
           Update Landmark Coordinates
+        </button>
+
+        <button id="btn-delete-slot" type="button" class="btn-secondary" style="margin-top: 8px; width: 100%; border-color: var(--accent-danger); color: var(--accent-danger); font-weight: 600; font-size: 13px; padding: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          Remove from Today's Route
         </button>
       </div>
     </div>
@@ -557,8 +586,8 @@
   </div>
 
   <!-- Core App JS -->
-  <script type="module" src="./js/app.js?v=43"></script>
+  <script type="module" src="./js/app.js?v=44"></script>
   <!-- Service Worker registration -->
-  <script src="./js/sw-register.js?v=43"></script>
+  <script src="./js/sw-register.js?v=44"></script>
 </body>
 </html>

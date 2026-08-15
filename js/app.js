@@ -24,6 +24,7 @@ import {
   resetCurrentRoute,
   completeActiveSlot,
   saveSlotEdit,
+  deleteSlot,
   applyRecalculation
 } from './scheduler.js';
 
@@ -37,6 +38,8 @@ import {
   syncActiveSlotWithLocalTime,
   updateTimerDisplay,
   closeEditSlotModal,
+  changeEditSlotDuration,
+  addLandmarkTask,
   renderBacklog
 } from './ui-render.js';
 
@@ -322,6 +325,16 @@ function setupEventListeners() {
     btnCloseEditSlot.addEventListener('click', closeEditSlotModal);
   }
 
+  const btnDurationMinus = document.getElementById('btn-duration-minus');
+  if (btnDurationMinus) {
+    btnDurationMinus.addEventListener('click', () => changeEditSlotDuration(-15));
+  }
+
+  const btnDurationPlus = document.getElementById('btn-duration-plus');
+  if (btnDurationPlus) {
+    btnDurationPlus.addEventListener('click', () => changeEditSlotDuration(15));
+  }
+
   const btnSaveSlotEdit = document.getElementById('btn-save-slot-edit');
   if (btnSaveSlotEdit) {
     btnSaveSlotEdit.addEventListener('click', () => {
@@ -329,12 +342,46 @@ function setupEventListeners() {
     });
   }
 
-  const editSlotBacklogSelect = document.getElementById('edit-slot-backlog-select');
-  if (editSlotBacklogSelect) {
-    editSlotBacklogSelect.addEventListener('change', (e) => {
-      if (e.target.value) {
-        document.getElementById('edit-slot-title').value = e.target.value;
+  const btnDeleteSlot = document.getElementById('btn-delete-slot');
+  if (btnDeleteSlot) {
+    btnDeleteSlot.addEventListener('click', () => {
+      const idx = parseInt(document.getElementById('edit-slot-index').value, 10);
+      if (!isNaN(idx)) deleteSlot(idx);
+    });
+  }
+
+  // Edit Slot - Add Task/Milestone directly
+  const btnEditSlotAddTask = document.getElementById('btn-edit-slot-add-task');
+  const editSlotNewTaskInput = document.getElementById('edit-slot-new-task');
+  if (btnEditSlotAddTask && editSlotNewTaskInput) {
+    const handleAddEditSlotTask = () => {
+      const idx = parseInt(document.getElementById('edit-slot-index').value, 10);
+      const text = editSlotNewTaskInput.value.trim();
+      if (!isNaN(idx) && text) {
+        addLandmarkTask(idx, text);
+        editSlotNewTaskInput.value = '';
       }
+    };
+    btnEditSlotAddTask.addEventListener('click', handleAddEditSlotTask);
+    editSlotNewTaskInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAddEditSlotTask();
+    });
+  }
+
+  // Focus View - Add Task/Milestone directly
+  const btnFocusAddTask = document.getElementById('btn-focus-add-task');
+  const focusNewTaskInput = document.getElementById('focus-new-task-input');
+  if (btnFocusAddTask && focusNewTaskInput) {
+    const handleAddFocusTask = () => {
+      const text = focusNewTaskInput.value.trim();
+      if (text && state.currentRoute) {
+        addLandmarkTask(state.activeSlotIndex, text);
+        focusNewTaskInput.value = '';
+      }
+    };
+    btnFocusAddTask.addEventListener('click', handleAddFocusTask);
+    focusNewTaskInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAddFocusTask();
     });
   }
 
@@ -539,3 +586,6 @@ window.addEventListener('beforeinstallprompt', (e) => {
   const installContainer = document.getElementById('pwa-install-container');
   if (installContainer) installContainer.style.display = 'block';
 });
+
+// Bind window triggers for dynamic card action buttons
+window.deleteLandmark = deleteSlot;
