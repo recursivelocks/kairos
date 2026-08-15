@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    // Global Error Overlay Logger
+    window.addEventListener('error', function(e) {
+      var div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.top = '10px';
+      div.style.left = '10px';
+      div.style.right = '10px';
+      div.style.background = '#ef4444';
+      div.style.color = '#fff';
+      div.style.padding = '16px';
+      div.style.borderRadius = '8px';
+      div.style.zIndex = '99999';
+      div.style.fontSize = '14px';
+      div.style.fontFamily = 'monospace';
+      div.style.whiteSpace = 'pre-wrap';
+      div.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.3)';
+      div.innerText = 'Uncaught Error: ' + e.message + '\nat ' + e.filename + ':' + e.lineno + ':' + e.colno + '\n' + (e.error ? e.error.stack : '');
+      document.body.appendChild(div);
+    });
+
+    // Programmatic PWA Cache Buster for v43
+    const CURRENT_APP_VERSION = '43';
+    const installedVersion = localStorage.getItem('kairos_app_version');
+    if (installedVersion !== CURRENT_APP_VERSION) {
+      localStorage.setItem('kairos_app_version', CURRENT_APP_VERSION);
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) caches.delete(name);
+        }).then(function() {
+          localStorage.removeItem('kairos_state');
+          localStorage.removeItem('kairos_theme_migrated_v35');
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              for (let registration of registrations) registration.unregister();
+            }).then(function() {
+              window.location.reload();
+            });
+          } else {
+            window.location.reload();
+          }
+        });
+      }
+    }
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kairos GPS: The Prescriptive Daily Organizer</title>
+  <meta name="description" content="An active GPS for your day. Set your pillars, sleep constraints, and task backlog, then let the app prescribe what to do, when, and how, adapting dynamically.">
+  
+  <!-- PWA meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Core styling -->
+  <link rel="stylesheet" href="./css/style.css?v=43">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- ONBOARDING SCREEN -->
+    <main id="view-onboarding" class="view active">
+      <div class="onboarding-logo">
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="100%" stop-color="#3b82f6" />
+            </linearGradient>
+          </defs>
+          <circle cx="256" cy="256" r="220" fill="none" stroke="url(#logoGrad)" stroke-width="20" stroke-dasharray="10 15"/>
+          <path d="M 200 320 C 200 260, 312 260, 312 200 C 312 170, 270 140, 256 140" fill="none" stroke="url(#logoGrad)" stroke-width="24" stroke-linecap="round"/>
+          <circle cx="256" cy="140" r="16" fill="#ffffff" />
+          <circle cx="200" cy="320" r="12" fill="#3b82f6" />
+        </svg>
+        <h1>Kairos GPS</h1>
+        <p>Outsource your daily planning. Execute with zero decision fatigue.</p>
+      </div>
+
+      <div class="glass-card">
+        <h2>1. Define Your Pillars</h2>
+        <div class="input-group">
+          <label for="pillar-1">Pillar A (Primary focus)</label>
+          <input type="text" id="pillar-1" value="Career Growth" placeholder="e.g. Career Growth">
+        </div>
+        <div class="input-group">
+          <label for="pillar-2">Pillar B (Self Care / health)</label>
+          <input type="text" id="pillar-2" value="Physical Health" placeholder="e.g. Physical Health">
+        </div>
+        <div class="input-group">
+          <label for="pillar-3">Pillar C (Social / mental)</label>
+          <input type="text" id="pillar-3" value="Mental Rest" placeholder="e.g. Relationships, Rest">
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h2>2. Time & Energy Constraints</h2>
+        <div class="inline-inputs">
+          <div class="input-group">
+            <label for="wake-time">Wake Up Hour</label>
+            <input type="time" id="wake-time" value="07:00">
+          </div>
+          <div class="input-group">
+            <label for="sleep-time">Sleep Hour</label>
+            <input type="time" id="sleep-time" value="23:00">
+          </div>
+        </div>
+        <div class="input-group" style="margin-top: 12px;">
+          <label for="energy-peak">Your Daily Energy Peak</label>
+          <select id="energy-peak">
+            <option value="morning">Morning Lark (09:00 - 12:00)</option>
+            <option value="afternoon" selected>Afternoon Achiever (14:00 - 17:00)</option>
+            <option value="evening">Night Owl (19:00 - 22:00)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h2>3. Task Backlog</h2>
+        <div class="input-group">
+          <label>Add tasks & assign to pillars</label>
+          <div class="tag-input-wrapper">
+            <input type="text" id="task-input" placeholder="e.g. Write proposal, hit the gym...">
+            <select id="task-pillar-select" style="width: 120px;">
+              <option value="1">Pillar A</option>
+              <option value="2">Pillar B</option>
+              <option value="3">Pillar C</option>
+            </select>
+          </div>
+          <button id="btn-add-task" class="btn-secondary" style="padding: 10px; margin-top: 8px;">+ Add to Backlog</button>
+        </div>
+        <div id="backlog-list" class="tag-list">
+          <!-- Dynamically populated chips -->
+        </div>
+      </div>
+
+      <button id="btn-generate-route" class="btn-primary" style="margin-bottom: 40px;">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        Assemble Daily Route
+      </button>
+    </main>
+
+    <!-- COMPASS ALIGNMENT VIEW -->
+    <section id="view-compass" class="view">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span class="date-badge">Guiding Center</span>
+        <h1 style="font-size: 26px;">True North Compass</h1>
+      </div>
+
+      <!-- Animated SVG Compass -->
+      <div class="glass-card" style="display: flex; justify-content: center; align-items: center; padding: 20px;">
+        <div class="compass-widget">
+          <svg viewBox="0 0 200 200" width="160" height="160">
+            <!-- Compass Ring -->
+            <circle cx="100" cy="100" r="80" fill="none" stroke="var(--glass-border)" stroke-width="4"/>
+            <circle cx="100" cy="100" r="72" fill="none" stroke="var(--accent-primary)" stroke-width="2" stroke-dasharray="2 6"/>
+            <!-- Compass Directions -->
+            <text x="100" y="34" fill="var(--accent-primary)" font-size="12" font-weight="800" text-anchor="middle">N</text>
+            <text x="100" y="176" fill="var(--text-muted)" font-size="10" font-weight="600" text-anchor="middle">S</text>
+            <text x="170" y="104" fill="var(--text-muted)" font-size="10" font-weight="600" text-anchor="middle">E</text>
+            <text x="30" y="104" fill="var(--text-muted)" font-size="10" font-weight="600" text-anchor="middle">W</text>
+            <!-- Needle -->
+            <g id="compass-needle" class="compass-needle">
+              <!-- North Pointer -->
+              <polygon points="100,45 106,100 94,100" fill="url(#logoGrad)"/>
+              <!-- South Pointer -->
+              <polygon points="100,155 106,100 94,100" fill="var(--text-muted)"/>
+              <circle cx="100" cy="100" r="6" fill="#ffffff"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Guiding Motto -->
+      <div class="glass-card">
+        <h2>Guiding Motto / Core Principle</h2>
+        <p style="margin-bottom: 12px;">Your personal daily anchor. Re-align with it whenever you drift.</p>
+        <div class="input-group" style="margin-bottom: 0;">
+          <textarea id="compass-motto-input" rows="2" style="font-size: 16px; font-weight: 500; text-align: center; font-style: italic;" placeholder="e.g. Focus on what you can control."></textarea>
+        </div>
+      </div>
+
+      <!-- Pillar Whys -->
+      <div class="glass-card">
+        <h2>Pillar Alignments (Why They Matter)</h2>
+        <div class="input-group">
+          <label id="lbl-pillar-1">Pillar A Description</label>
+          <textarea id="compass-desc-1" rows="2" placeholder="Why does this pillar matter to you?"></textarea>
+        </div>
+        <div class="input-group">
+          <label id="lbl-pillar-2">Pillar B Description</label>
+          <textarea id="compass-desc-2" rows="2" placeholder="Why does this pillar matter to you?"></textarea>
+        </div>
+        <div class="input-group" style="margin-bottom: 0;">
+          <label id="lbl-pillar-3">Pillar C Description</label>
+          <textarea id="compass-desc-3" rows="2" placeholder="Why does this pillar matter to you?"></textarea>
+        </div>
+      </div>
+
+      <!-- Active Task Backlog List -->
+      <div class="glass-card">
+        <h2>Active Task Backlog</h2>
+        <p style="margin-bottom: 12px;">Active intentions in queue. Check or edit them here or on the Logs page.</p>
+        
+        <!-- Add Task Input Form directly on Compass page -->
+        <div class="input-group" style="margin-bottom: 15px;">
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="compass-task-input" placeholder="e.g. Call dentist, review code..." style="flex: 1; padding: 10px 14px;">
+            <select id="compass-task-pillar-select" class="theme-select" style="width: 110px; margin: 0; padding: 0 8px; border: 1px solid var(--glass-border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); font-weight: 500;">
+              <option value="1">Pillar A</option>
+              <option value="2">Pillar B</option>
+              <option value="3">Pillar C</option>
+            </select>
+            <button id="btn-compass-add-task" class="btn-primary" style="width: 50px; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800;">+</button>
+          </div>
+        </div>
+
+        <div id="compass-backlog-list" class="tag-list" style="display: flex; flex-direction: column; align-items: stretch; gap: 8px;">
+          <!-- Backlog tasks populated here -->
+        </div>
+      </div>
+
+      <!-- Guiding Rules / Reminders -->
+      <div class="glass-card" style="margin-bottom: 40px;">
+        <h2>Guiding Rules & Reminders</h2>
+        <p style="margin-bottom: 12px;">Key constraints or daily thoughts to remember.</p>
+        <div class="input-group">
+          <div class="tag-input-wrapper">
+            <input type="text" id="reminder-input" placeholder="e.g. Put the phone down before 9 PM...">
+            <button id="btn-add-reminder" class="btn-primary" style="width: 50px; padding: 0;">+</button>
+          </div>
+        </div>
+        <div id="reminders-list" class="tag-list" style="display: flex; flex-direction: column; align-items: stretch; gap: 8px;">
+          <!-- Reminders populated here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMELINE DASHBOARD VIEW -->
+    <section id="view-timeline" class="view">
+      <div class="dashboard-header">
+        <div>
+          <span class="date-badge" id="date-label">Today's Route</span>
+          <h1 style="font-size: 24px; margin-bottom: 0;">Your Daily Path</h1>
+        </div>
+        <button id="btn-reset-timeline" class="btn-circle" style="width: 40px; height: 40px;" title="Reset Route">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18v3"/></svg>
+        </button>
+      </div>
+
+      <!-- Sync Banner for out-of-sync coordinates -->
+      <div id="timeline-sync-banner" class="glass-card" style="display: none; align-items: center; justify-content: space-between; padding: 12px 16px; border-color: rgba(24, 119, 242, 0.3); background: rgba(24, 119, 242, 0.04); margin-bottom: 20px;"></div>
+
+      <!-- Compliance Ring -->
+      <div class="progress-widget">
+        <div class="progress-circle-container">
+          <svg>
+            <circle class="progress-circle-bg" cx="30" cy="30" r="27"></circle>
+            <circle id="compliance-bar" class="progress-circle-bar" cx="30" cy="30" r="27"></circle>
+          </svg>
+          <span class="progress-percentage" id="compliance-percentage">0%</span>
+        </div>
+        <div>
+          <h3 style="color: var(--text-primary); font-size: 15px; margin-bottom: 2px;">Daily Intention Progress</h3>
+          <p id="compliance-status">Initializing route coordinates...</p>
+        </div>
+      </div>
+
+      <!-- Vertical Timeline List -->
+      <div class="timeline-container">
+        <div class="timeline-progress-bar" id="timeline-progress-line"></div>
+        <div id="timeline-slots-container">
+          <!-- Programmatically generated slots go here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- FOCUS VIEW -->
+    <section id="view-focus" class="view">
+      <div class="focus-header">
+        <span class="date-badge">Active Focus Coordinates</span>
+        <h1 style="font-size: 26px;">Current Intention</h1>
+      </div>
+
+      <div class="glass-card focus-card">
+        <span class="focus-pillar-tag" id="focus-pillar">Career Growth</span>
+        <h2 class="focus-title" id="focus-task-title">Review Design Draft</h2>
+        <div class="focus-strategy" id="focus-strategy-name">Strategy: Pomodoro (25/5)</div>
+
+        <!-- Timer Ring -->
+        <div class="timer-ring-container" id="timer-wrapper">
+          <svg>
+            <circle class="timer-ring-bg" cx="110" cy="110" r="100"></circle>
+            <circle id="timer-progress" class="timer-ring-bar" cx="110" cy="110" r="100"></circle>
+          </svg>
+          <div class="timer-text-container">
+            <span class="timer-time" id="timer-display">25:00</span>
+            <span class="timer-label" id="timer-state-label">Focusing</span>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="timer-controls">
+          <button id="btn-toggle-timer" class="btn-circle active" style="flex: 1;" title="Play/Pause">
+            <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button id="btn-skip-timer" class="btn-circle" title="Skip/Forward">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Focus Milestones checklist -->
+        <div id="focus-milestones-section" style="margin-top: 24px; border-top: 1px dashed var(--glass-border); padding-top: 20px; display: none;">
+          <h3 style="color: var(--text-primary); font-size: 14px; margin-bottom: 12px; text-align: left;">Active Milestones:</h3>
+          <div id="focus-milestones-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+            <!-- Milestones checkboxes populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Completion and Recalculate -->
+        <div class="focus-actions">
+          <button id="btn-recalculate" class="btn-secondary" style="border-color: var(--accent-warning); color: var(--accent-warning);">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18v3"/></svg>
+            Recalculate
+          </button>
+          <button id="btn-complete-task" class="btn-primary">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;"><path d="M5 13l4 4L19 7"/></svg>
+            Complete
+          </button>
+        </div>
+      </div>
+      
+      <!-- Current Day reflection sheet (appears when the day schedule ends) -->
+      <div id="reflection-card" class="glass-card" style="display: none; margin-top: 10px;">
+        <h2>Day Summary & Reflection</h2>
+        <p style="margin-bottom: 12px;">The daily route has completed. Log a quick review to update the navigation records.</p>
+        <div class="input-group">
+          <label for="reflection-input">Evening Review Note</label>
+          <textarea id="reflection-input" rows="3" placeholder="What worked today? Where did you drift?"></textarea>
+        </div>
+        <button id="btn-submit-day" class="btn-primary">Archive Day & Sync Logs</button>
+      </div>
+    </section>
+
+    <!-- HISTORY VIEW -->
+    <section id="view-history" class="view">
+      <h1>Navigation Log</h1>
+      <p style="margin-bottom: 20px;">Review your history of intention alignment and drift compliance.</p>
+
+      <div class="history-stats-grid">
+        <div class="stat-card">
+          <h3>Consistency</h3>
+          <div class="stat-value" id="stat-consistency">0%</div>
+        </div>
+        <div class="stat-card">
+          <h3>Days Tracked</h3>
+          <div class="stat-value" id="stat-days-tracked">0</div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <h2>App Configuration</h2>
+        <div class="input-group" style="margin-bottom: 20px;">
+          <label>Theme Preset</label>
+          <div class="theme-selector">
+            <button class="theme-btn" data-theme="dark">Dark</button>
+            <button class="theme-btn active" data-theme="cream">Light</button>
+            <button class="theme-btn" data-theme="oled">OLED</button>
+          </div>
+        </div>
+
+        <!-- PWA Installation -->
+        <div id="pwa-install-container" style="display: none; border-top: 1px solid var(--glass-border); padding-top: 20px; margin-top: 20px;">
+          <h3 style="color: var(--text-primary); margin-bottom: 6px;">Application Access</h3>
+          <p style="font-size: 12px; margin-bottom: 12px;">Install Kairos GPS directly onto your home screen for quick, offline-ready standalone access.</p>
+          <button id="btn-install-pwa" class="btn-primary" style="padding: 12px; font-size: 14px;">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right: 6px; vertical-align: middle;"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Install on Device
+          </button>
+        </div>
+
+        <!-- Firebase Cloud Configuration -->
+        <div style="border-top: 1px solid var(--glass-border); padding-top: 20px; margin-top: 20px;">
+          <h3 style="color: var(--text-primary); margin-bottom: 6px;">Cloud Coordinates Sync</h3>
+          <p style="font-size: 12px; margin-bottom: 16px;">Synchronize your daily priority routes, backlog tasks, and compass principles automatically across all your devices.</p>
+          
+          <div id="fb-logged-out-form">
+            <button id="btn-google-signin" class="btn-primary" style="background: #ffffff; color: #1f2937; border: 1px solid #d1d5db; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; width: 100%; padding: 12px; font-weight: 600; font-size: 14px; border-radius: var(--radius-md); cursor: pointer;">
+              <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right: 10px; vertical-align: middle;">
+                <path fill="#EA4335" d="M12 5.04c1.67 0 3.2.58 4.38 1.71l3.27-3.27C17.67 1.63 14.98 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.86 3C6.27 7.5 8.9 5.04 12 5.04z"/>
+                <path fill="#4285F4" d="M23.49 12.27c0-.81-.07-1.59-.2-2.35H12v4.51h6.48c-.29 1.48-1.14 2.73-2.4 3.57l3.73 2.9c2.18-2 3.68-4.96 3.68-8.63z"/>
+                <path fill="#FBBC05" d="M5.36 14.5c-.24-.72-.38-1.49-.38-2.3s.14-1.58.38-2.3L1.5 6.9C.54 8.84 0 10.98 0 13.2s.54 4.36 1.5 6.3l3.86-3z"/>
+                <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.9l-3.73-2.9c-1.1.74-2.5 1.18-4.23 1.18-3.1 0-5.73-2.46-6.64-5.46L1.5 15.92C3.4 19.77 7.35 23 12 23z"/>
+              </svg>
+              Sign In with Google
+            </button>
+          </div>
+
+          <div id="fb-logged-in-form" style="display: none; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: var(--radius-md); padding: 16px;">
+            <div style="display: flex; align-items: center; margin-bottom: 14px;">
+              <img id="fb-user-photo" src="" style="width: 36px; height: 36px; border-radius: 50%; margin-right: 12px; display: none; border: 1.5px solid var(--accent-success);">
+              <div>
+                <div id="fb-user-name" style="font-size: 14px; font-weight: 700; color: var(--text-primary);">User Name</div>
+                <div id="fb-user-email" style="font-size: 11px; color: var(--text-secondary);">user@email.com</div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: var(--accent-success); font-weight: 600; display: flex; align-items: center; margin-bottom: 16px;">
+              <span style="display: inline-block; width: 6px; height: 6px; background: var(--accent-success); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--accent-success)"></span>
+              Auto-Sync Coordinates Active
+            </div>
+            <button id="btn-fb-signout" class="btn-secondary" style="border-color: var(--accent-danger); color: var(--accent-danger); padding: 8px 12px; font-size: 12px; width: 100%; cursor: pointer;">Disconnect Cloud Sync</button>
+          </div>
+        </div>
+      </div>
+
+      <h2>Completed Routes</h2>
+      <div id="history-entries" class="history-list">
+        <!-- Dynamically populated entries -->
+        <p style="text-align: center; color: var(--text-muted); margin-top: 20px; font-style: italic;">No logged history yet. Complete your first day route to start sync.</p>
+      </div>
+    </section>
+
+    <!-- BOTTOM TAB BAR NAVIGATION -->
+    <nav class="tab-bar">
+      <button class="tab-btn" data-view="compass" id="tab-compass">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M16.2 7.8l-2 4.4-4.4 2 2-4.4 4.4-2z"/>
+        </svg>
+        <span>Compass</span>
+      </button>
+      <button class="tab-btn active" data-view="timeline" id="tab-timeline">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+        <span>Route</span>
+      </button>
+      <button class="tab-btn" data-view="focus" id="tab-focus">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Focus GPS</span>
+      </button>
+      <button class="tab-btn" data-view="history" id="tab-history">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/></svg>
+        <span>Logs</span>
+      </button>
+    </nav>
+
+    <!-- RECALCULATE ROUTE MODAL -->
+    <div class="modal-overlay" id="recalculate-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 style="margin-bottom: 0;">Recalculate Route</h2>
+          <button class="btn-close" id="btn-close-recalculate" aria-label="Close modal">&times;</button>
+        </div>
+        <p style="margin-bottom: 20px;">Your focus coordinates have drifted. Select a recalculation criteria to adapt your day:</p>
+        
+        <div class="recalculate-option-grid">
+          <div class="recalculate-card" data-reason="distracted">
+            <div class="recalculate-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+              <h4>🚧 I Got Interrupted / Distracted</h4>
+              <p>Shift current task forward, trim non-priority blocks, recalculate timeline.</p>
+            </div>
+          </div>
+          
+          <div class="recalculate-card" data-reason="energy">
+            <div class="recalculate-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+              <h4>⚡ My Energy Crashed</h4>
+              <p>Swap active block with a low-energy task. Push deep work to next high energy slot.</p>
+            </div>
+          </div>
+          
+          <div class="recalculate-card" data-reason="overrun">
+            <div class="recalculate-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h4>⌛ Task is Taking Longer</h4>
+              <p>Allocate +30 mins to active task. Shift downstream blocks. Drop final non-essential tasks.</p>
+            </div>
+          </div>
+          
+          <div class="recalculate-card" data-reason="rest">
+            <div class="recalculate-icon">
+              <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </div>
+            <div>
+              <h4>💤 I Need a Mental Rest Block</h4>
+              <p>Inject an immediate 15 min rest break. Shift active slot, maintain sleep constraints.</p>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-apply-recalculation" class="btn-primary">Apply Dynamic Re-route</button>
+      </div>
+    </div>
+
+    <!-- EDIT SLOT MODAL -->
+    <div class="modal-overlay" id="edit-slot-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 style="margin-bottom: 0;">Adjust Coordinate</h2>
+          <button class="btn-close" id="btn-close-edit-slot" aria-label="Close modal">&times;</button>
+        </div>
+        <p style="margin-bottom: 20px;">Manually configure this landmark block's parameters:</p>
+        
+        <input type="hidden" id="edit-slot-index">
+
+        <div class="input-group">
+          <label for="edit-slot-title">Intention Title</label>
+          <input type="text" id="edit-slot-title" placeholder="Landmark focus title...">
+        </div>
+
+
+
+        <div class="inline-inputs">
+          <div class="input-group">
+            <label for="edit-slot-duration">Duration (Minutes)</label>
+            <input type="number" id="edit-slot-duration" min="5" max="480">
+          </div>
+          <div class="input-group">
+            <label for="edit-slot-strategy">Strategy Guide</label>
+            <select id="edit-slot-strategy">
+              <option value="pomodoro">Pomodoro (25/5)</option>
+              <option value="timebox">Time-Boxing (50/10)</option>
+              <option value="frog">Eat the Frog (90/15)</option>
+              <option value="micro">10-Min Microtasks</option>
+              <option value="rest">Mindful Recharge</option>
+              <option value="routine">Mindful Start/End</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="btn-save-slot-edit" class="btn-primary" style="margin-top: 16px;">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;"><path d="M5 13l4 4L19 7"/></svg>
+          Update Landmark Coordinates
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;"></div>
+  </div>
+
+  <!-- Core App JS -->
+  <script type="module" src="./js/app.js?v=43"></script>
+  <!-- Service Worker registration -->
+  <script src="./js/sw-register.js?v=43"></script>
+</body>
+</html>
